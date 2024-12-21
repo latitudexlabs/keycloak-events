@@ -72,24 +72,24 @@ public class HttpSenderEventListenerProvider extends SenderEventListenerProvider
       throws SenderException, IOException {
     log.debugf("attempting send to %s", targetUri);
     try (CloseableHttpClient http = HttpClients.createDefault()) {
+
       LegacySimpleHttp request = LegacySimpleHttp.doPost(targetUri, http).json(task.getEvent());
       sharedSecret.ifPresent(
-          secret ->
-              request.header(
-                  "X-Keycloak-Signature",
-                  hmacFor(task.getEvent(), secret, algorithm.orElse(HMAC_SHA256_ALGORITHM))));
-      LegacySimpleHttp.Response response = request.asResponse();
-      int status = response.getStatus();
-      log.debugf("sent to %s (%d)", targetUri, status);
+              request::auth);
+        int status;
+        try (LegacySimpleHttp.Response response = request.asResponse()) {
+            status = response.getStatus();
+        }
+        log.debugf("sent to %s (%d)", targetUri, status);
       if (status < HTTP_OK || status >= HTTP_MULT_CHOICE) { // any 2xx is acceptable
-        log.warnf("Sending failure (Server response:%d)", status);
+        log.debugf("Sending failure (Server response:%d)", status);
         throw new SenderException(true);
       }
     } catch (SenderException se) {
       // rethrow existing SenderException
       throw se;
     } catch (Exception e) {
-      log.warnf(e, "Sending exception to %s", targetUri);
+      log.debugf(e, "Sending exception to %s", targetUri);
       throw new SenderException(false, e);
     }
   }

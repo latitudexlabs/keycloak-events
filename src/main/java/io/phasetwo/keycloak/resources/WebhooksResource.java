@@ -36,7 +36,7 @@ public class WebhooksResource extends AbstractAdminResource {
   @Produces(MediaType.APPLICATION_JSON)
   public Stream<WebhookRepresentation> getWebhooks() {
     permissions.realm().requireViewEvents();
-    return webhooks.getWebhooksStream(realm).map(w -> toRepresentation(w));
+    return webhooks.getWebhooksStream(realm).map(this::toRepresentation);
   }
 
   private WebhookRepresentation toRepresentation(WebhookModel w) {

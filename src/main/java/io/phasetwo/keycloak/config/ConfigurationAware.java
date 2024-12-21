@@ -18,7 +18,7 @@ public interface ConfigurationAware {
     if (realm == null) return ImmutableList.of();
     return RealmAttributesConfigLoader.loadConfigurations(session, realm.getName(), getId())
         .stream()
-        .map(config -> RealmAttributesConfigLoader.safeConvertToMap(config))
+        .map(RealmAttributesConfigLoader::safeConvertToMap)
         .collect(Collectors.toList());
   }
 

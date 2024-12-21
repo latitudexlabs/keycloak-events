@@ -31,7 +31,6 @@ public class ScriptEventListenerProvider implements EventListenerProvider, Confi
     this.session = session;
     this.scriptsDisabled = Boolean.parseBoolean(System.getenv(SCRIPTS_DISABLED_ENV));
   }
-
   protected Map<String, Object> config;
 
   @Override
