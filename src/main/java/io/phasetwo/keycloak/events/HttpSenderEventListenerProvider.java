@@ -43,9 +43,9 @@ public class HttpSenderEventListenerProvider extends SenderEventListenerProvider
     else
       return new ExponentialBackOff.Builder()
           .setInitialIntervalMillis(getIntOr(config, BACKOFF_INITIAL_INTERVAL, 500))
-          .setMaxElapsedTimeMillis(getIntOr(config, BACKOFF_MAX_ELAPSED_TIME, 10000))
+          .setMaxElapsedTimeMillis(getIntOr(config, BACKOFF_MAX_ELAPSED_TIME, 5000))
           .setMaxIntervalMillis(getIntOr(config, BACKOFF_MAX_INTERVAL, 5000))
-          .setMultiplier(getDoubleOr(config, BACKOFF_MULTIPLIER, 1.5))
+          .setMultiplier(getDoubleOr(config, BACKOFF_MULTIPLIER, 2))
           .setRandomizationFactor(getDoubleOr(config, BACKOFF_RANDOMIZATION_FACTOR, 0.5))
           .build();
   }
@@ -55,7 +55,6 @@ public class HttpSenderEventListenerProvider extends SenderEventListenerProvider
   }
 
   Optional<String> getSharedSecret() {
-    log.debugf("secret is %s", System.getenv("SHARED_SECRET"));
     return Optional.ofNullable(config.get(SHARED_SECRET))
             .map(Object::toString)
             .or(() -> Optional.ofNullable(System.getenv("SHARED_SECRET")));

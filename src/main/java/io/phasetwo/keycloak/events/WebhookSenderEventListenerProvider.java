@@ -137,7 +137,9 @@ public class WebhookSenderEventListenerProvider extends HttpSenderEventListenerP
   @Override
   void send(SenderTask task) throws SenderException, IOException {
     String targetUri = task.getProperties().get("url");
-    Optional<String> sharedSecret = Optional.ofNullable(task.getProperties().get("secret"));
+    String secret = Optional.ofNullable(task.getProperties().get("secret"))
+            .orElse(System.getenv("SHARED_SECRET"));
+    Optional<String> sharedSecret = Optional.ofNullable(secret);
     Optional<String> hmacAlgorithm = Optional.ofNullable(task.getProperties().get("algorithm"));
     send(task, targetUri, sharedSecret, hmacAlgorithm);
   }
