@@ -55,7 +55,7 @@ public class HttpSenderEventListenerProvider extends SenderEventListenerProvider
   }
 
   Optional<String> getSharedSecret() {
-    log.infof("secret is %s", System.getenv("SHARED_SECRET"));
+    log.debugf("secret is %s", System.getenv("SHARED_SECRET"));
     return Optional.ofNullable(config.get(SHARED_SECRET))
             .map(Object::toString)
             .or(() -> Optional.ofNullable(System.getenv("SHARED_SECRET")));
