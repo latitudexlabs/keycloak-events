@@ -55,8 +55,11 @@ public class HttpSenderEventListenerProvider extends SenderEventListenerProvider
   }
 
   Optional<String> getSharedSecret() {
-    return Optional.ofNullable(config.get(SHARED_SECRET)).map(Object::toString);
+    return Optional.ofNullable(config.get(SHARED_SECRET))
+            .map(Object::toString)
+            .or(() -> Optional.ofNullable(System.getenv("SHARED_SECRET")));
   }
+
 
   Optional<String> getHmacAlgorithm() {
     return Optional.ofNullable(config.get(HMAC_ALGORITHM)).map(Object::toString);
