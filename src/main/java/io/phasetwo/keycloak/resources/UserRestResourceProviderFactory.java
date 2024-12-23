@@ -12,7 +12,7 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 @AutoService(RealmResourceProviderFactory.class)
 public class UserRestResourceProviderFactory implements RealmResourceProviderFactory {
 
-    public static final String ID = "user-attributes";
+    public static final String ID = "users";
 
     @Override
     public String getId() {

@@ -18,7 +18,7 @@ public class UserRestResource extends AbstractAdminResource {
     }
 
     @GET
-    @Path("{userId}")
+    @Path("{userId}/attributes")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getAttributes(
             final @PathParam("userId") String userId
@@ -31,13 +31,14 @@ public class UserRestResource extends AbstractAdminResource {
     }
 
     @PATCH
-    @Path("{userId}")
+    @Path("{userId}/attributes")
     @Produces({MediaType.APPLICATION_JSON})
-    public Response pathAttributes(final @PathParam("userId") String userId,
+    public Response patchAttributes(final @PathParam("userId") String userId,
                                    final Map<String, List<String>> attributes) {
         permissions.users().requireQuery();
         permissions.users().requireView();
         permissions.users().requireManage();
+
         UserModel userModel = session.users().getUserById(realm, userId);
         if (userModel == null) throw new NotFoundException(String.format("no user with id %s", userId));
         // Merge currentAttributes with incoming attributes
