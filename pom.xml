@@ -3,7 +3,7 @@
   <groupId>io.phasetwo.keycloak</groupId>
   <artifactId>keycloak-events</artifactId>
   <packaging>jar</packaging>
-  <version>1.0.0</version>
+  <version>0.46-SNAPSHOT</version>
 
   <parent>
     <groupId>com.github.xgp</groupId>
@@ -30,9 +30,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <main.java.package>io.phasetwo.keycloak.events</main.java.package>
     <junit.version>5.11.2</junit.version>
-    <keycloak.version>26.0.7</keycloak.version>
-    <keycloak-admin-client.version>26.0.3</keycloak-admin-client.version>
-    <lombok.version>1.18.34</lombok.version>
+    <keycloak.version>26.1.2</keycloak.version>
+    <keycloak-admin-client.version>26.0.4</keycloak-admin-client.version>
+    <lombok.version>1.18.36</lombok.version>
     <auto-service.version>1.1.1</auto-service.version>
     <ossrh.url>https://s01.oss.sonatype.org</ossrh.url>
   </properties>
@@ -74,8 +74,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.1</version>
         <configuration>
-          <source>9</source>
-          <target>9</target>
+          <source>1.8</source>
+          <target>1.8</target>
 	  <compilerArgument>-Xlint:unchecked</compilerArgument>
 	  <compilerArgument>-Xlint:deprecation</compilerArgument>
           <useIncrementalCompilation>false</useIncrementalCompilation>
@@ -117,8 +117,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.2.2</version>
-	<configuration>
+        <version>3.5.2</version>
+        <configuration>
+          <classpathDependencyExcludes>
+            <classpathDependencyExclude>org.jboss.slf4j:slf4j-jboss-logmanager</classpathDependencyExclude>
+          </classpathDependencyExcludes>
           <systemPropertyVariables>
 	    <keycloak-version>${keycloak.version}</keycloak-version>
           </systemPropertyVariables>
@@ -232,13 +235,13 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>1.19.3</version>
+      <version>1.20.4</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.github.dasniko</groupId>
       <artifactId>testcontainers-keycloak</artifactId>
-      <version>3.5.1</version>
+      <version>3.6.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
