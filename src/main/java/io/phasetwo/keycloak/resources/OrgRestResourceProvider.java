@@ -2,15 +2,15 @@ package io.phasetwo.keycloak.resources;
 
 import org.keycloak.models.KeycloakSession;
 
-public class UserRestResourceProvider extends BaseRealmResourceProvider {
+public class OrgRestResourceProvider extends BaseRealmResourceProvider {
 
-    public UserRestResourceProvider(KeycloakSession session) {
+    public OrgRestResourceProvider(KeycloakSession session) {
         super(session);
     }
 
     @Override
     protected Object getRealmResource() {
-        UserRestResource userRestResource = new UserRestResource(session);
+        OrgRestResource userRestResource = new OrgRestResource(session);
         userRestResource.setup();
         return userRestResource;
     }

@@ -99,7 +99,7 @@ public class WebhookSenderEventListenerProviderTest extends AbstractResourceTest
       // Now delete the user
       List<UserRepresentation> users = realm.users().search("username");
       assertThat(users.size(), is(1));
-      String userId = users.getFirst().getId();
+      String userId = users.get(0).getId();
       userResponse = realm.users().delete(userId);
       assertThat(userResponse.getStatus(), is(204));
 
@@ -174,7 +174,7 @@ public class WebhookSenderEventListenerProviderTest extends AbstractResourceTest
       // Now delete the user
       List<UserRepresentation> users = realm.users().search("username");
       assertThat(users.size(), is(1));
-      String userId = users.getFirst().getId();
+      String userId = users.get(0).getId();
       userResponse = realm.users().delete(userId);
       assertThat(userResponse.getStatus(), is(204));
 
@@ -251,7 +251,7 @@ public class WebhookSenderEventListenerProviderTest extends AbstractResourceTest
       // Now delete the user
       List<UserRepresentation> users = realm.users().search("username");
       assertThat(users.size(), is(1));
-      String userId = users.getFirst().getId();
+      String userId = users.get(0).getId();
       userResponse = realm.users().delete(userId);
       assertThat(userResponse.getStatus(), is(204));
 
@@ -368,7 +368,7 @@ public class WebhookSenderEventListenerProviderTest extends AbstractResourceTest
       // Now delete the user
       List<UserRepresentation> users = realm.users().search("username");
       assertThat(users.size(), is(1));
-      String userId = users.getFirst().getId();
+      String userId = users.get(0).getId();
       userResponse = realm.users().delete(userId);
       assertThat(userResponse.getStatus(), is(204));
 
@@ -486,7 +486,7 @@ public class WebhookSenderEventListenerProviderTest extends AbstractResourceTest
       // Now delete the user
       List<UserRepresentation> users = realm.users().search("username");
       assertThat(users.size(), is(1));
-      String userId = users.getFirst().getId();
+      String userId = users.get(0).getId();
       userResponse = realm.users().delete(userId);
       assertThat(userResponse.getStatus(), is(204));
 

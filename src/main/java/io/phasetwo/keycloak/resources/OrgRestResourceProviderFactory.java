@@ -10,9 +10,9 @@ import org.keycloak.services.resource.RealmResourceProviderFactory;
 
 @JBossLog
 @AutoService(RealmResourceProviderFactory.class)
-public class UserRestResourceProviderFactory implements RealmResourceProviderFactory {
+public class OrgRestResourceProviderFactory implements RealmResourceProviderFactory {
 
-    public static final String ID = "users";
+    public static final String ID = "org";
 
     @Override
     public String getId() {
@@ -23,7 +23,7 @@ public class UserRestResourceProviderFactory implements RealmResourceProviderFac
     @Override
     public RealmResourceProvider create(KeycloakSession session) {
 
-        return new UserRestResourceProvider(session);
+        return new OrgRestResourceProvider(session);
     }
 
     @Override
