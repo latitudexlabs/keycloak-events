@@ -21,15 +21,17 @@ public class UserAddListener extends UserEventListenerProviderFactory {
             void onUserAdded(KeycloakSession session, RealmModel realm, UserModel user) {
                 try {
                     if (realm.isOrganizationsEnabled()) {
+                        String userEmail = user.getEmail();
+                        log.debugf("creating organization for user %s", userEmail);
                         OrganizationProvider organizationProvider = org.keycloak.organization.utils.Organizations.getProvider(session);
                         if (organizationProvider != null) {
+                            log.infof("getting current organization for user %s", userEmail);
                             OrganizationModel organizationModel = org.keycloak.organization.utils.Organizations.resolveOrganization(session, user);
-                            String userEmail = user.getEmail();
                             if (organizationModel != null) {
-                                log.debugf("user %s already has organization %s set", userEmail, organizationModel.getName());
+                                log.infof("user %s already has organization %s set", userEmail, organizationModel.getName());
                                 organizationProvider.addMember(organizationModel, user);
                             } else {
-                                log.debugf("creating organization for user %s", userEmail);
+                                log.infof("creating organization for user %s", userEmail);
                                 try {
                                     OrganizationModel model = organizationProvider.create(userEmail, UUID.randomUUID().toString());
                                     if (model != null) {
@@ -43,10 +45,10 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                                         set.add(new OrganizationDomainModel(domain, true));
                                         model.setDomains(set);
                                         organizationProvider.addMember(model, user);
-                                        log.debugf("created organization %s (%s) for user %s", model.getName(), model.getId(), user.getEmail());
+                                        log.infof("created organization %s (%s) for user %s", model.getName(), model.getId(), user.getEmail());
                                     }
                                 } catch (ModelDuplicateException e) {
-                                    log.debugf("organization with name %s already exists", userEmail);
+                                    log.infof("organization with name %s already exists", userEmail);
                                     OrganizationModel orgModel = organizationProvider.getByAlias(userEmail);
                                     if (orgModel != null) {
                                         organizationProvider.addMember(orgModel, user);
@@ -54,10 +56,10 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                                 }
                             }
                         } else {
-                            log.debugf("organization provider not enabled");
+                            log.infof("organization provider not enabled");
                         }
                     } else {
-                        log.debugf("organization feature not enabled for realm %s", realm.getName());
+                        log.infof("organization feature not enabled for realm %s", realm.getName());
                     }
                 } catch (Exception e) {
                     log.warn("Uncaught Sender error", e);

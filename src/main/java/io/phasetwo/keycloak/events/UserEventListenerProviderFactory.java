@@ -58,6 +58,7 @@ public abstract class UserEventListenerProviderFactory
                   protected void commitImpl() {
                     KeycloakModelUtils.runJobInTransaction(
                         factory,
+                        session.getContext(),
                         (s) -> {
                           RealmModel realm = s.realms().getRealm(realmId);
                           UserModel user = s.users().getUserById(realm, userId);

@@ -13,6 +13,7 @@ import org.keycloak.broker.provider.util.LegacySimpleHttp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
 import org.keycloak.organization.OrganizationProvider;
+import org.keycloak.representations.AccessToken;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,6 +31,16 @@ public class OrgRestResource extends AbstractAdminResource {
         this.orgMgmtBaseurl = System.getenv(ORG_MGMT_BASEURL);
     }
 
+    private void checkForAccountAccess() {
+        AccessToken.Access account = auth.getToken().getResourceAccess("account");
+
+        if (account == null ||
+                !account.isUserInRole("manage-account") ||
+                !account.isUserInRole("view-profile")) {
+            throw new ForbiddenException("insufficient permissions");
+        }
+    }
+
     @GET
     @Path("{orgId}/attributes")
     @Produces({MediaType.APPLICATION_JSON})
@@ -38,6 +49,7 @@ public class OrgRestResource extends AbstractAdminResource {
     ) {
         permissions.users().requireQuery();
         permissions.users().requireView();
+
         if (!realm.isOrganizationsEnabled()) {
             throw new BadRequestException("organization feature not enabled");
         }
@@ -53,6 +65,7 @@ public class OrgRestResource extends AbstractAdminResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response patchAttributes(final @PathParam("orgId") String orgId,
                                    final Map<String, List<String>> attributes) {
+
         permissions.users().requireQuery();
         permissions.users().requireView();
         permissions.users().requireManage();
@@ -78,9 +91,7 @@ public class OrgRestResource extends AbstractAdminResource {
     @Consumes({MediaType.APPLICATION_JSON})
     public Response generateApiKey(@PathParam("org_id") String orgId,
                                    ApiKeyRequest request) {
-        permissions.users().requireQuery();
-        permissions.users().requireView();
-        permissions.users().requireManage();
+        checkForAccountAccess();
 
         String url = this.orgMgmtBaseurl + "/api/v1/org/" + orgId + "/generate-key";
         return forwardPost(url, request);
@@ -90,9 +101,7 @@ public class OrgRestResource extends AbstractAdminResource {
     @Path("{org_id}/{key_label}")
     public Response deleteApiKey(@PathParam("org_id") String orgId,
                                  @PathParam("key_label") String keyLabel) {
-        permissions.users().requireQuery();
-        permissions.users().requireView();
-        permissions.users().requireManage();
+        checkForAccountAccess();
 
         String url = this.orgMgmtBaseurl + "/api/v1/org/" + orgId + "/" + keyLabel;
         return forwardDelete(url);
@@ -102,9 +111,7 @@ public class OrgRestResource extends AbstractAdminResource {
     @Path("{org_id}/keys")
     @Produces({MediaType.APPLICATION_JSON})
     public Response listApiKeys(@PathParam("org_id") String orgId) {
-        permissions.users().requireQuery();
-        permissions.users().requireView();
-        permissions.users().requireManage();
+        checkForAccountAccess();
 
         String url = this.orgMgmtBaseurl + "/api/v1/org/" + orgId + "/keys";
         return forwardGet(url);
@@ -114,9 +121,7 @@ public class OrgRestResource extends AbstractAdminResource {
     @Path("{org_id}/plan")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getPlanInfo(@PathParam("org_id") String orgId) {
-        permissions.users().requireQuery();
-        permissions.users().requireView();
-        permissions.users().requireManage();
+        checkForAccountAccess();
 
         String url = this.orgMgmtBaseurl + "/api/v1/org/" + orgId + "/plan";
         return forwardGet(url);
@@ -127,9 +132,7 @@ public class OrgRestResource extends AbstractAdminResource {
     @Produces({MediaType.APPLICATION_JSON})
     public Response getApiUsage(@PathParam("org_id") String orgId,
                                 UsageRequest request) {
-        permissions.users().requireQuery();
-        permissions.users().requireView();
-        permissions.users().requireManage();
+        checkForAccountAccess();
 
         String url = this.orgMgmtBaseurl + "/api/v1/org/" + orgId + "/api-usage";
         return forwardPost(url, request);
