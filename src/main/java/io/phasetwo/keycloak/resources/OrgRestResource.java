@@ -2,6 +2,7 @@ package io.phasetwo.keycloak.resources;
 
 import com.razorpay.*;
 import io.phasetwo.keycloak.representation.ApiKeyRequest;
+import io.phasetwo.keycloak.representation.InvoiceSummary;
 import io.phasetwo.keycloak.representation.UsageRequest;
 import jakarta.json.Json;
 import jakarta.ws.rs.*;
@@ -14,12 +15,15 @@ import org.json.JSONObject;
 import org.keycloak.broker.provider.util.LegacySimpleHttp;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OrganizationModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.AccessToken;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static io.phasetwo.keycloak.events.UserAddListener.getDefaultOrgAttributes;
 
@@ -220,7 +224,10 @@ public class OrgRestResource extends AbstractAdminResource {
         Map<String, Object> org_plan_details = new java.util.HashMap<>();
 
         org_plan_details.put("org_id", organizationModel.getId());
-        org_plan_details.put("org_email", auth.getUser().getEmail());
+
+        UserModel authUser = auth.getUser();
+        org_plan_details.put("org_email", authUser.getEmail());
+        org_plan_details.put("customer_name", String.format("%s %s", authUser.getFirstName(), authUser.getLastName()));
 
         List<String> subscription_id = currentAttributes.get("subscription_id");
         if (subscription_id != null && !subscription_id.isEmpty()) org_plan_details.put("subscription_id", subscription_id.get(0));
@@ -289,6 +296,60 @@ public class OrgRestResource extends AbstractAdminResource {
         }
     }
 
+    @GET
+    @Path("subscription/invoices")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getAllInvoices() {
+        checkForAccountAccess();
+
+        OrganizationModel organizationModel = getOrgFromAuth();
+        try {
+            Map<String, List<String>> currentAttributes = organizationModel.getAttributes();
+            List<String> subscription_id = currentAttributes.get("subscription_id");
+
+            if (subscription_id == null || subscription_id.isEmpty()) {
+                throw new BadRequestException("organization does not have any valid subscription");
+            }
+
+            String subscriptionId = subscription_id.get(0);
+            if (subscriptionId.isEmpty()) {
+                throw new BadRequestException("organization does not have any valid subscription");
+            }
+
+            RazorpayClient razorpay = new RazorpayClient(System.getenv("RAZORPAY_KEY_ID"), System.getenv("RAZORPAY_KEY_SECRET"));
+
+            Subscription subscription = razorpay.subscriptions.fetch(subscriptionId);
+            if (subscription != null) {
+                String customerId = subscription.get("customer_id");
+                if (customerId != null && !customerId.isEmpty()) {
+                    JSONObject invoice_req = new JSONObject();
+                    invoice_req.put("customer_id", customerId);
+                    List<Invoice> invoices = razorpay.invoices.fetchAll(invoice_req);
+                    if (invoices != null) {
+                        List<InvoiceSummary> invoiceSummaries = invoices.stream().map(invoice -> {
+                            InvoiceSummary invoiceSummary = new InvoiceSummary();
+                            invoiceSummary.setId(invoice.get("id"));
+                            invoiceSummary.setCustomerId(invoice.get("customer_id"));
+                            invoiceSummary.setSubscriptionId(invoice.get("subscription_id"));
+                            invoiceSummary.setPaymentId(invoice.get("payment_id"));
+                            invoiceSummary.setStatus(invoice.get("status"));
+                            int amount = invoice.get("amount");
+                            invoiceSummary.setAmount((amount / 100.0));
+                            invoiceSummary.setCurrencySymbol(invoice.get("currency_symbol"));
+                            invoiceSummary.setCreatedAt(invoice.get("created_at"));
+                            return invoiceSummary;
+                        }).collect(Collectors.toList());
+
+                        return Response.ok(invoiceSummaries).build();
+                    }
+                }
+            }
+            return Response.ok(new ArrayList<InvoiceSummary>()).build();
+        } catch (RazorpayException e) {
+            return errorResponse(Response.Status.BAD_REQUEST, "Unable to fetch subscription invoices", e);
+        }
+    }
+
     @POST
     @Path("subscription/cancel")
     @Produces({MediaType.APPLICATION_JSON})
@@ -333,7 +394,24 @@ public class OrgRestResource extends AbstractAdminResource {
                 currentAttributes.putAll(default_org_attributes);
                 organizationModel.setAttributes(currentAttributes);
 
-                // TODO: issue refund
+                /*
+                // TODO: refund
+                JSONObject notes = subscription.get("notes");
+                double price = 0;
+                if (notes != null) {
+                    price = notes.getDouble("plan_price");
+                }
+                if (price > 0.0) {
+                    long current_start = subscription.get("current_start");
+                    long current_end = subscription.get("current_end");
+                    long ended_at = subscription.get("ended_at");
+
+                    if (ended_at >= current_start) {
+                        long cycle_duration = current_end - current_start;
+                        long unused_time = current_end - ended_at;
+                        price = (((double) unused_time / cycle_duration) * price) * 100;
+                    }
+                }*/
             }
 
             Map<String, String> entity = new java.util.HashMap<>();
