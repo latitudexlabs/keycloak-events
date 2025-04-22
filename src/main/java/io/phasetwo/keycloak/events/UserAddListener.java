@@ -33,16 +33,15 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                             } else {
                                 log.infof("creating organization for user %s", userEmail);
                                 try {
-                                    OrganizationModel model = organizationProvider.create(userEmail, UUID.randomUUID().toString());
+                                    String alias = UUID.randomUUID().toString();
+                                    OrganizationModel model = organizationProvider.create(userEmail, alias);
                                     if (model != null) {
-                                        Map<String, List<String>> map = new java.util.HashMap<>();
-                                        List<String> extra_attrs = new java.util.ArrayList<>();
-                                        extra_attrs.add("");
-                                        map.put("extra_info", extra_attrs);
-                                        model.setAttributes(map);
-                                        String domain = userEmail.substring(userEmail.indexOf("@") + 1);
+
+                                        Map<String, List<String>> attr_map = getDefaultOrgAttributes();
+
+                                        model.setAttributes(attr_map);
                                         Set<OrganizationDomainModel> set = new java.util.HashSet<>();
-                                        set.add(new OrganizationDomainModel(domain, true));
+                                        set.add(new OrganizationDomainModel(alias, true));
                                         model.setDomains(set);
                                         organizationProvider.addMember(model, user);
                                         log.infof("created organization %s (%s) for user %s", model.getName(), model.getId(), user.getEmail());
@@ -71,6 +70,31 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                 
             }
         };
+    }
+
+    public static Map<String, List<String>> getDefaultOrgAttributes() {
+        Map<String, List<String>> attr_map = new java.util.HashMap<>();
+
+        List<String> subscription_plan_name = new java.util.ArrayList<>();
+        subscription_plan_name.add("free-plan");
+        attr_map.put("subscription_plan_name", subscription_plan_name);
+
+        List<String> subscription_plan_id = new java.util.ArrayList<>();
+        subscription_plan_id.add("");
+        attr_map.put("subscription_plan_id", subscription_plan_id);
+
+        List<String> subscription_plan_billing_cycle = new java.util.ArrayList<>();
+        subscription_plan_billing_cycle.add("monthly");
+        attr_map.put("subscription_plan_billing_cycle", subscription_plan_billing_cycle);
+
+        List<String> subscription_plan_call_limit = new java.util.ArrayList<>();
+        subscription_plan_call_limit.add("100");
+        attr_map.put("subscription_plan_call_limit", subscription_plan_call_limit);
+
+        List<String> subscription_id = new java.util.ArrayList<>();
+        subscription_id.add("");
+        attr_map.put("subscription_id", subscription_id);
+        return attr_map;
     }
 
     @Override
