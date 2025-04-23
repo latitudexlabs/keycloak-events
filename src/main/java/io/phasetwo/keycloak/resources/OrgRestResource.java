@@ -21,6 +21,7 @@ import org.keycloak.representations.AccessToken;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -328,15 +329,29 @@ public class OrgRestResource extends AbstractAdminResource {
                     if (invoices != null) {
                         List<InvoiceSummary> invoiceSummaries = invoices.stream().map(invoice -> {
                             InvoiceSummary invoiceSummary = new InvoiceSummary();
-                            invoiceSummary.setId(invoice.get("id"));
-                            invoiceSummary.setCustomerId(invoice.get("customer_id"));
-                            invoiceSummary.setSubscriptionId(invoice.get("subscription_id"));
-                            invoiceSummary.setPaymentId(invoice.get("payment_id"));
-                            invoiceSummary.setStatus(invoice.get("status"));
-                            int amount = invoice.get("amount");
-                            invoiceSummary.setAmount((amount / 100.0));
-                            invoiceSummary.setCurrencySymbol(invoice.get("currency_symbol"));
-                            invoiceSummary.setCreatedAt(invoice.get("created_at"));
+                            Object id = invoice.get("id");
+                            if (id != JSONObject.NULL) invoiceSummary.setId((String) id);
+                            invoiceSummary.setCustomerId(customerId);
+                            Object subscription_value = invoice.get("subscription_id");
+                            if (subscription_value != JSONObject.NULL) invoiceSummary.setSubscriptionId((String) subscription_value);
+
+                            Object paymentId = invoice.get("payment_id");
+                            if (paymentId != JSONObject.NULL) invoiceSummary.setPaymentId((String) paymentId);
+
+                            Object status = invoice.get("status");
+                            if (status != JSONObject.NULL) invoiceSummary.setStatus((String) status);
+
+                            Object amountObj = invoice.get("amount");
+                            if (amountObj != JSONObject.NULL) {
+                                int amount = (Integer) amountObj;
+                                invoiceSummary.setAmount(amount / 100.0);
+                            }
+
+                            Object currencySymbol = invoice.get("currency_symbol");
+                            if (currencySymbol != JSONObject.NULL) invoiceSummary.setCurrencySymbol((String) currencySymbol);
+
+                            Object createdAt = invoice.get("created_at");
+                            if (createdAt != JSONObject.NULL) invoiceSummary.setCreatedAt((Date) createdAt);
                             return invoiceSummary;
                         }).collect(Collectors.toList());
 
@@ -346,7 +361,7 @@ public class OrgRestResource extends AbstractAdminResource {
             }
             return Response.ok(new ArrayList<InvoiceSummary>()).build();
         } catch (RazorpayException e) {
-            return errorResponse(Response.Status.BAD_REQUEST, "Unable to fetch subscription invoices", e);
+            return errorResponse(Response.Status.BAD_REQUEST, "Unable to fetch subscription invoices", new Exception(e.getMessage()));
         }
     }
 

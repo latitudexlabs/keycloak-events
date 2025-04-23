@@ -2,6 +2,8 @@ package io.phasetwo.keycloak.representation;
 
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 public class InvoiceSummary {
     private String id;
@@ -10,6 +12,6 @@ public class InvoiceSummary {
     private String paymentId;
     private String status;
     private double amount;
-    private long createdAt;
+    private Date createdAt;
     private String currencySymbol;
 }
