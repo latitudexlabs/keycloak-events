@@ -64,15 +64,15 @@ class HeaderFooterPageEvent extends PdfPageEventHelper {
 
         // FOOTER TEXT
         ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
-                new Phrase("Your Company Name Pvt. Ltd.", footerBold),
+                new Phrase("LatitudeX Labs Innovations Pvt. Ltd.", footerBold),
                 (document.right() + document.left()) / 2, document.bottom() - 25, 0);
 
         ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
-                new Phrase("123 Tech Park, Business Street, Bengaluru, KA 560001, India", footerFont),
+                new Phrase("H.no J-18, Kh. no 74/2, Ph-2 Budh Vihar, Pooth Kalan, North West Delhi, DL, 110086", footerFont),
                 (document.right() + document.left()) / 2, document.bottom() - 37, 0);
 
         ColumnText.showTextAligned(cb, Element.ALIGN_CENTER,
-                new Phrase("LUT U12345KA2020PTC123456 | https://www.intellipins.com", footerFont),
+                new Phrase("GST 07AAGCL0912M1ZH | Contact: support@intellipins.com | https://www.intellipins.com", footerFont),
                 (document.right() + document.left()) / 2, document.bottom() - 49, 0);
     }
 }

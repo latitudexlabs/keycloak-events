@@ -391,6 +391,7 @@ public class OrgRestResource extends AbstractAdminResource {
 
             Invoice invoice = razorpay.invoices.fetch(invoiceId);
             if (invoice != null) {
+                String invoice_subscription_id = invoice.get("subscription_id");
                 JSONObject json = invoice.toJson();
 
                 // Generate PDF in memory
@@ -417,16 +418,29 @@ public class OrgRestResource extends AbstractAdminResource {
                 document.add(new Paragraph("Payment ID: " + json.optString("payment_id", "-"), bodyFont));
 
                 document.add(new Paragraph("\nBilled To", subHeaderFont));
+                UserModel userModel = auth.getUser();
+
                 JSONObject customer = json.optJSONObject("customer_details");
-                if (customer != null) {
-                    document.add(new Paragraph("Name: " + customer.optString("customer_name", "-"), bodyFont));
-                    document.add(new Paragraph("Email: " + customer.optString("customer_email", "-"), bodyFont));
+                if (userModel != null && customer != null) {
+                    document.add(new Paragraph("Name: " + userModel.getFirstName() + " " + userModel.getLastName(), bodyFont));
+                    document.add(new Paragraph("Email: " + userModel.getEmail(), bodyFont));
                     document.add(new Paragraph("Contact: " + customer.optString("customer_contact", "-"), bodyFont));
-                    document.add(new Paragraph("Billing Address: " + customer.optString("billing_address", "-"), bodyFont));
+
+                    Map<String, List<String>> userAttributes = auth.getUser().getAttributes();
+                    if (userAttributes != null) {
+                        List<String> addresses = userAttributes.get("address");
+                        if (addresses != null && !addresses.isEmpty()) {
+                            document.add(new Paragraph("Billing Address: " + addresses.get(0), bodyFont));
+                        }
+                        List<String> legal_id = userAttributes.get("legal_id");
+                        if (legal_id != null && !legal_id.isEmpty()) {
+                            document.add(new Paragraph("Legal Id: " + legal_id.get(0), bodyFont));
+                        }
+                    }
                 }
 
                 document.add(new Paragraph("\nSubscription Info", subHeaderFont));
-                document.add(new Paragraph("Subscription ID: " + json.optString("subscription_id", "-"), bodyFont));
+                document.add(new Paragraph("Subscription ID: " + invoice_subscription_id, bodyFont));
                 document.add(new Paragraph("Billing Period: " + formatDate(json.optLong("billing_start")) + " - " + formatDate(json.optLong("billing_end")), bodyFont));
 
                 document.add(new Paragraph("\n", subHeaderFont));
