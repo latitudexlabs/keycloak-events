@@ -1,5 +1,6 @@
 package io.phasetwo.keycloak.resources;
 
+import com.lowagie.text.Document;
 import com.razorpay.*;
 import io.phasetwo.keycloak.representation.ApiKeyRequest;
 import io.phasetwo.keycloak.representation.InvoiceSummary;
@@ -18,6 +19,17 @@ import org.keycloak.models.OrganizationModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.organization.OrganizationProvider;
 import org.keycloak.representations.AccessToken;
+import com.lowagie.text.*;
+import com.lowagie.text.pdf.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -365,6 +377,118 @@ public class OrgRestResource extends AbstractAdminResource {
         }
     }
 
+    @GET
+    @Path("subscription/invoices/{invoiceId}/download")
+    @Produces("application/pdf")
+    public Response downloadInvoice(@PathParam("invoiceId") String invoiceId) {
+        checkForAccountAccess();
+
+        try {
+            RazorpayClient razorpay = new RazorpayClient(
+                    System.getenv("RAZORPAY_KEY_ID"),
+                    System.getenv("RAZORPAY_KEY_SECRET")
+            );
+
+            Invoice invoice = razorpay.invoices.fetch(invoiceId);
+            if (invoice != null) {
+                JSONObject json = invoice.toJson();
+
+                // Generate PDF in memory
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                Document document = new Document(PageSize.A4, 50, 50, 50, 50);
+                PdfWriter writer = PdfWriter.getInstance(document, baos);
+                writer.setPageEvent(new HeaderFooterPageEvent()); // Optional
+
+                document.open();
+
+                Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20);
+                Font subHeaderFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+                Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+                Font bodyFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
+
+                Paragraph title = new Paragraph("Invoice", headerFont);
+                title.setAlignment(Element.ALIGN_CENTER);
+                document.add(title);
+
+                document.add(new Paragraph("\nInvoice ID: " + json.getString("id"), bodyFont));
+                document.add(new Paragraph("Status: " + json.optString("status", "-"), boldFont));
+                document.add(new Paragraph("Issued At: " + formatDate(json.optLong("issued_at")), bodyFont));
+                document.add(new Paragraph("Paid At: " + formatDate(json.optLong("paid_at")), bodyFont));
+                document.add(new Paragraph("Payment ID: " + json.optString("payment_id", "-"), bodyFont));
+
+                document.add(new Paragraph("\nBilled To", subHeaderFont));
+                JSONObject customer = json.optJSONObject("customer_details");
+                if (customer != null) {
+                    document.add(new Paragraph("Name: " + customer.optString("customer_name", "-"), bodyFont));
+                    document.add(new Paragraph("Email: " + customer.optString("customer_email", "-"), bodyFont));
+                    document.add(new Paragraph("Contact: " + customer.optString("customer_contact", "-"), bodyFont));
+                    document.add(new Paragraph("Billing Address: " + customer.optString("billing_address", "-"), bodyFont));
+                }
+
+                document.add(new Paragraph("\nSubscription Info", subHeaderFont));
+                document.add(new Paragraph("Subscription ID: " + json.optString("subscription_id", "-"), bodyFont));
+                document.add(new Paragraph("Billing Period: " + formatDate(json.optLong("billing_start")) + " - " + formatDate(json.optLong("billing_end")), bodyFont));
+
+                document.add(new Paragraph("\n", subHeaderFont));
+
+                // Line items table
+                PdfPTable table = new PdfPTable(5);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{2, 3, 2, 2, 2});
+
+                table.addCell(createCell("Item", boldFont));
+                table.addCell(createCell("Description", boldFont));
+                table.addCell(createCell("Quantity", boldFont));
+                table.addCell(createCell("Unit Price", boldFont));
+                table.addCell(createCell("Amount", boldFont));
+
+                JSONArray lineItems = json.optJSONArray("line_items");
+                String currencySymbol = json.optString("currency_symbol", "");
+
+                if (lineItems != null) {
+                    for (int i = 0; i < lineItems.length(); i++) {
+                        JSONObject item = lineItems.getJSONObject(i);
+                        table.addCell(createCell(item.optString("name", "-"), bodyFont));
+                        table.addCell(createCell(item.optString("description", "-"), bodyFont));
+                        table.addCell(createCell(String.valueOf(item.optInt("quantity", 0)), bodyFont));
+                        table.addCell(createCell(currencySymbol + (item.optInt("unit_amount", 0) / 100.0), bodyFont));
+                        table.addCell(createCell(currencySymbol + (item.optInt("amount", 0) / 100.0), bodyFont));
+                    }
+                }
+
+                document.add(table);
+
+                // Summary Table
+                PdfPTable summaryTable = new PdfPTable(2);
+                summaryTable.setWidthPercentage(36);
+                summaryTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+                summaryTable.addCell(createCell("Subtotal:", bodyFont));
+                summaryTable.addCell(createCell(currencySymbol + (json.optInt("amount") / 100.0), bodyFont));
+                summaryTable.addCell(createCell("Tax:", bodyFont));
+                summaryTable.addCell(createCell(currencySymbol + (json.optInt("tax_amount") / 100.0), bodyFont));
+                summaryTable.addCell(createCell("Total Paid:", boldFont));
+                summaryTable.addCell(createCell(currencySymbol + (json.optInt("amount_paid") / 100.0), boldFont));
+                summaryTable.addCell(createCell("Amount Due:", bodyFont));
+                summaryTable.addCell(createCell(currencySymbol + (json.optInt("amount_due") / 100.0), bodyFont));
+
+                document.add(summaryTable);
+                document.close();
+
+                // Return the PDF response
+                return Response.ok(new ByteArrayInputStream(baos.toByteArray()))
+                        .type("application/pdf")
+                        .header("Content-Disposition", "attachment; filename=\"" + invoiceId + ".pdf\"")
+                        .build();
+            }
+
+            return errorResponse(Response.Status.NOT_FOUND, "Invoice not found or does not have a PDF", null);
+        } catch (Exception e) {
+            return errorResponse(Response.Status.BAD_REQUEST, "Unable to download invoice", e);
+        }
+    }
+
+
     @POST
     @Path("subscription/cancel")
     @Produces({MediaType.APPLICATION_JSON})
@@ -580,5 +704,19 @@ public class OrgRestResource extends AbstractAdminResource {
                         .add("details", e.getMessage())
                         .build())
                 .build();
+    }
+
+    private static PdfPCell createCell(String content, Font font) {
+        PdfPCell cell = new PdfPCell(new Phrase(content, font));
+        cell.setBorder(Rectangle.BOTTOM);
+        cell.setPadding(8);
+        return cell;
+    }
+
+    private static String formatDate(long timestamp) {
+        Date date = new Date(timestamp * 1000);
+        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(date);
     }
 }
