@@ -413,8 +413,8 @@ public class OrgRestResource extends AbstractAdminResource {
 
                 document.add(new Paragraph("\nInvoice ID: " + json.getString("id"), bodyFont));
                 document.add(new Paragraph("Status: " + json.optString("status", "-"), boldFont));
-                document.add(new Paragraph("Issued At: " + formatDate(json.optLong("issued_at")), bodyFont));
-                document.add(new Paragraph("Paid At: " + formatDate(json.optLong("paid_at")), bodyFont));
+                document.add(new Paragraph("Issued At: " + formatDate(json.optLong("issued_at")) + " GMT", bodyFont));
+                document.add(new Paragraph("Paid At: " + formatDate(json.optLong("paid_at")) + " GMT", bodyFont));
                 document.add(new Paragraph("Payment ID: " + json.optString("payment_id", "-"), bodyFont));
 
                 document.add(new Paragraph("\nBilled To", subHeaderFont));
@@ -441,7 +441,7 @@ public class OrgRestResource extends AbstractAdminResource {
 
                 document.add(new Paragraph("\nSubscription Info", subHeaderFont));
                 document.add(new Paragraph("Subscription ID: " + invoice_subscription_id, bodyFont));
-                document.add(new Paragraph("Billing Period: " + formatDate(json.optLong("billing_start")) + " - " + formatDate(json.optLong("billing_end")), bodyFont));
+                document.add(new Paragraph("Billing Period: " + formatDate(json.optLong("billing_start")) + " GMT - " + formatDate(json.optLong("billing_end")) + " GMT", bodyFont));
 
                 document.add(new Paragraph("\n", subHeaderFont));
 
@@ -729,7 +729,7 @@ public class OrgRestResource extends AbstractAdminResource {
 
     private static String formatDate(long timestamp) {
         Date date = new Date(timestamp * 1000);
-        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy");
+        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy HH:mm:ss a");
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         return sdf.format(date);
     }
