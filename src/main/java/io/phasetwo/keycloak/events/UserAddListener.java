@@ -33,7 +33,7 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                                 log.infof("creating organization for user %s", userEmail);
                                 try {
                                     String alias = userEmail.replaceAll("[^a-zA-Z0-9]", "-");
-                                    OrganizationModel model = organizationProvider.create(userEmail, alias);
+                                    OrganizationModel model = organizationProvider.create(alias, alias);
                                     if (model != null) {
 
                                         Map<String, List<String>> attr_map = getDefaultOrgAttributes();
