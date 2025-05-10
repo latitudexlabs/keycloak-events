@@ -9,7 +9,6 @@ import org.keycloak.organization.OrganizationProvider;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 @JBossLog
 @AutoService(EventListenerProviderFactory.class)
@@ -33,7 +32,7 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                             } else {
                                 log.infof("creating organization for user %s", userEmail);
                                 try {
-                                    String alias = UUID.randomUUID().toString();
+                                    String alias = userEmail.replaceAll("[^a-zA-Z0-9]", "-");
                                     OrganizationModel model = organizationProvider.create(userEmail, alias);
                                     if (model != null) {
 
