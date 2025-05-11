@@ -76,10 +76,11 @@ public class UserAddListener extends UserEventListenerProviderFactory {
 
         List<String> subscription_plan_name = new java.util.ArrayList<>();
         subscription_plan_name.add("free-plan");
+        subscription_plan_name.add("active");
         attr_map.put("subscription_plan_name", subscription_plan_name);
 
         List<String> subscription_plan_id = new java.util.ArrayList<>();
-        subscription_plan_id.add("");
+        subscription_plan_id.add("0");
         attr_map.put("subscription_plan_id", subscription_plan_id);
 
         List<String> subscription_plan_billing_cycle = new java.util.ArrayList<>();
@@ -91,7 +92,7 @@ public class UserAddListener extends UserEventListenerProviderFactory {
         attr_map.put("subscription_plan_call_limit", subscription_plan_call_limit);
 
         List<String> subscription_id = new java.util.ArrayList<>();
-        subscription_id.add("");
+        subscription_id.add("0");
         attr_map.put("subscription_id", subscription_id);
         return attr_map;
     }

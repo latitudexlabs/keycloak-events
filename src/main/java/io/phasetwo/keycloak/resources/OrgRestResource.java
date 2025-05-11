@@ -138,6 +138,7 @@ public class OrgRestResource extends AbstractAdminResource {
         permissions.users().requireView();
         permissions.users().requireManage();
 
+
         if (!realm.isOrganizationsEnabled()) {
             throw new BadRequestException("organization feature not enabled");
         }
@@ -172,6 +173,41 @@ public class OrgRestResource extends AbstractAdminResource {
 
         Map<String, List<String>> currentAttributes = organizationModel.getAttributes();
         currentAttributes.putAll(getDefaultOrgAttributes());
+        organizationModel.setAttributes(currentAttributes);
+
+        return Response.noContent().build();
+    }
+
+    @POST
+    @Path("{orgId}/plan/{status}")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response setOrgPlanStatus(final @PathParam("orgId") String orgId, final @PathParam("status") String status) {
+
+        if (!"active".equalsIgnoreCase(status) && !"disabled".equalsIgnoreCase(status)) {
+            throw new BadRequestException("Invalid status. Allowed values are 'active' or 'disabled'.");
+        }
+
+        permissions.users().requireQuery();
+        permissions.users().requireView();
+        permissions.users().requireManage();
+
+        if (!realm.isOrganizationsEnabled()) {
+            throw new BadRequestException("organization feature not enabled");
+        }
+        OrganizationProvider organizationProvider = org.keycloak.organization.utils.Organizations.getProvider(session);
+        if (organizationProvider == null) throw new BadRequestException("organization provider not enabled");
+        OrganizationModel organizationModel = organizationProvider.getById(orgId);
+        if (organizationModel == null) throw new NotFoundException(String.format("organization with id %s not found", orgId));
+
+        Map<String, List<String>> currentAttributes = organizationModel.getAttributes();
+
+        List<String> subscription_plan_name = currentAttributes.get("subscription_plan_name");
+        if (subscription_plan_name.size() > 1) {
+            subscription_plan_name.remove(1);
+        }
+        subscription_plan_name.add(status);
+        currentAttributes.put("subscription_plan_name", subscription_plan_name);
+
         organizationModel.setAttributes(currentAttributes);
 
         return Response.noContent().build();
@@ -244,15 +280,25 @@ public class OrgRestResource extends AbstractAdminResource {
 
         List<String> subscription_id = currentAttributes.get("subscription_id");
         if (subscription_id != null && !subscription_id.isEmpty()) org_plan_details.put("subscription_id", subscription_id.get(0));
-        else org_plan_details.put("subscription_id", "");
+        else org_plan_details.put("subscription_id", "0");
 
         List<String> subscription_plan_name = currentAttributes.get("subscription_plan_name");
-        if (subscription_plan_name != null && !subscription_plan_name.isEmpty()) org_plan_details.put("subscription_plan_name", subscription_plan_name.get(0));
-        else org_plan_details.put("subscription_plan_name", "free-plan");
+        if (subscription_plan_name != null && !subscription_plan_name.isEmpty()) {
+            org_plan_details.put("subscription_plan_name", subscription_plan_name.get(0));
+            if (subscription_plan_name.size() > 1) {
+                org_plan_details.put("subscription_plan_status", subscription_plan_name.get(1));
+            } else {
+                org_plan_details.put("subscription_plan_status", "active");
+            }
+        }
+        else {
+            org_plan_details.put("subscription_plan_name", "free-plan");
+            org_plan_details.put("subscription_plan_status", "active");
+        }
 
         List<String> subscription_plan_id = currentAttributes.get("subscription_plan_id");
         if (subscription_plan_id != null && !subscription_plan_id.isEmpty()) org_plan_details.put("subscription_plan_id", subscription_plan_id.get(0));
-        else org_plan_details.put("subscription_plan_id", "");
+        else org_plan_details.put("subscription_plan_id", "0");
 
         List<String> subscription_plan_billing_cycle = currentAttributes.get("subscription_plan_billing_cycle");
         if (subscription_plan_billing_cycle != null && !subscription_plan_billing_cycle.isEmpty()) org_plan_details.put("subscription_plan_billing_cycle", subscription_plan_billing_cycle.get(0));
@@ -325,7 +371,7 @@ public class OrgRestResource extends AbstractAdminResource {
             }
 
             String subscriptionId = subscription_id.get(0);
-            if (subscriptionId.isEmpty()) {
+            if (subscriptionId.isEmpty() || subscriptionId.equals("0")) {
                 throw new BadRequestException("organization does not have any valid subscription");
             }
 
@@ -530,7 +576,7 @@ public class OrgRestResource extends AbstractAdminResource {
             }
 
             String subscriptionId = subscription_id.get(0);
-            if (subscriptionId.isEmpty()) {
+            if (subscriptionId.isEmpty() || subscriptionId.equals("0")) {
                 throw new BadRequestException("organization does not have any valid subscription");
             }
 
@@ -628,6 +674,7 @@ public class OrgRestResource extends AbstractAdminResource {
                         String plan_name = plan_items.getString("name");
                         List<String> subscription_plan_name = new java.util.ArrayList<>();
                         subscription_plan_name.add(plan_name);
+                        subscription_plan_name.add("active");
                         attr_map.put("subscription_plan_name", subscription_plan_name);
 
                         JSONObject notes = plan.get("notes");
