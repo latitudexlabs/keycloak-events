@@ -28,14 +28,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
+import java.util.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.phasetwo.keycloak.events.UserAddListener.getDefaultOrgAttributes;
@@ -327,7 +324,7 @@ public class OrgRestResource extends AbstractAdminResource {
 
             if (subscription_plan_name != null && !subscription_plan_name.isEmpty()) {
                 String plan_name = subscription_plan_name.get(0);
-                if (plan_name.equalsIgnoreCase("enterprise-plan")) {
+                if (plan_name.equalsIgnoreCase("enterprise-plan") || plan_name.equalsIgnoreCase("admin")) {
                     throw new NotAllowedException("cannot create normal subscription for enterprise-plan");
                 } else if (!plan_name.isEmpty() && !plan_name.equalsIgnoreCase("free-plan")) {
                     throw new NotAllowedException(String.format("organization already has an ongoing subscription to %s", plan_name));
@@ -367,12 +364,14 @@ public class OrgRestResource extends AbstractAdminResource {
             List<String> subscription_id = currentAttributes.get("subscription_id");
 
             if (subscription_id == null || subscription_id.isEmpty()) {
-                throw new BadRequestException("organization does not have any valid subscription");
+                log.debug("organization does not have any valid subscription");
+                return Response.ok(new ArrayList<InvoiceSummary>()).build();
             }
 
             String subscriptionId = subscription_id.get(0);
             if (subscriptionId.isEmpty() || subscriptionId.equals("0")) {
-                throw new BadRequestException("organization does not have any valid subscription");
+                log.debug("organization does not have any valid subscription");
+                return Response.ok(new ArrayList<InvoiceSummary>()).build();
             }
 
             RazorpayClient razorpay = new RazorpayClient(System.getenv("RAZORPAY_KEY_ID"), System.getenv("RAZORPAY_KEY_SECRET"));
@@ -564,7 +563,7 @@ public class OrgRestResource extends AbstractAdminResource {
 
             if (subscription_plan_name != null && !subscription_plan_name.isEmpty()) {
                 String plan_name = subscription_plan_name.get(0);
-                if (plan_name.equalsIgnoreCase("enterprise-plan") || plan_name.equalsIgnoreCase("free-plan")) {
+                if (plan_name.equalsIgnoreCase("enterprise-plan") || plan_name.equalsIgnoreCase("free-plan") || plan_name.equalsIgnoreCase("admin")) {
                     throw new NotAllowedException(String.format("cannot cancel subscription for %s", plan_name));
                 }
             }
