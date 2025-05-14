@@ -64,6 +64,74 @@ public class OrgRestResource extends AbstractAdminResource {
     }
 
     @GET
+    @Path("{userId}/api-plan")
+    @Produces({MediaType.APPLICATION_JSON})
+    public Response getUserPlanInfo(final @PathParam("userId") String userId) {
+        permissions.users().requireQuery();
+        permissions.users().requireView();
+
+        if (!realm.isOrganizationsEnabled()) {
+            throw new BadRequestException("organization feature not enabled");
+        }
+
+        UserModel user = session.users().getUserById(auth.getRealm(), userId);
+
+        if (user == null) {
+            throw new BadRequestException("user not available");
+        }
+        String userEmail = user.getEmail();
+        OrganizationProvider organizationProvider = org.keycloak.organization.utils.Organizations.getProvider(session);
+        if (organizationProvider == null) {
+            throw new BadRequestException("organization feature not enabled");
+        }
+        String alias = userEmail.replaceAll("[^a-zA-Z0-9]", "-");
+        OrganizationModel organizationModel = organizationProvider.getByAlias(alias);
+        if (organizationModel == null) {
+            throw new BadRequestException("user not in any organization");
+        }
+
+        Map<String, List<String>> currentAttributes = organizationModel.getAttributes();
+        Map<String, Object> org_plan_details = new java.util.HashMap<>();
+
+        org_plan_details.put("org_id", organizationModel.getId());
+        org_plan_details.put("org_name", organizationModel.getAlias());
+        org_plan_details.put("org_email", userEmail);
+        org_plan_details.put("customer_name", String.format("%s %s", user.getFirstName(), user.getLastName()));
+
+        List<String> subscription_id = currentAttributes.get("subscription_id");
+        if (subscription_id != null && !subscription_id.isEmpty()) org_plan_details.put("subscription_id", subscription_id.get(0));
+        else org_plan_details.put("subscription_id", "0");
+
+        List<String> subscription_plan_name = currentAttributes.get("subscription_plan_name");
+        if (subscription_plan_name != null && !subscription_plan_name.isEmpty()) {
+            org_plan_details.put("subscription_plan_name", subscription_plan_name.get(0));
+            if (subscription_plan_name.size() > 1) {
+                org_plan_details.put("subscription_plan_status", subscription_plan_name.get(1));
+            } else {
+                org_plan_details.put("subscription_plan_status", "active");
+            }
+        }
+        else {
+            org_plan_details.put("subscription_plan_name", "free-plan");
+            org_plan_details.put("subscription_plan_status", "active");
+        }
+
+        List<String> subscription_plan_id = currentAttributes.get("subscription_plan_id");
+        if (subscription_plan_id != null && !subscription_plan_id.isEmpty()) org_plan_details.put("subscription_plan_id", subscription_plan_id.get(0));
+        else org_plan_details.put("subscription_plan_id", "0");
+
+        List<String> subscription_plan_billing_cycle = currentAttributes.get("subscription_plan_billing_cycle");
+        if (subscription_plan_billing_cycle != null && !subscription_plan_billing_cycle.isEmpty()) org_plan_details.put("subscription_plan_billing_cycle", subscription_plan_billing_cycle.get(0));
+        else org_plan_details.put("subscription_plan_billing_cycle", "monthly");
+
+        List<String> subscription_plan_call_limit = currentAttributes.get("subscription_plan_call_limit");
+        if (subscription_plan_call_limit != null && !subscription_plan_call_limit.isEmpty()) org_plan_details.put("subscription_plan_call_limit", subscription_plan_call_limit.get(0));
+        else org_plan_details.put("subscription_plan_call_limit", "100");
+
+        return Response.ok(org_plan_details).build();
+    }
+
+    @GET
     @Path("{orgId}/attributes")
     @Produces({MediaType.APPLICATION_JSON})
     public Response getAttributes(
@@ -227,7 +295,8 @@ public class OrgRestResource extends AbstractAdminResource {
         Map<String, Object> org_plan_details = new java.util.HashMap<>();
 
         org_plan_details.put("org_id", organizationModel.getId());
-
+        org_plan_details.put("org_name", organizationModel.getAlias());
+        
         UserModel authUser = auth.getUser();
         org_plan_details.put("org_email", authUser.getEmail());
         org_plan_details.put("customer_name", String.format("%s %s", authUser.getFirstName(), authUser.getLastName()));
