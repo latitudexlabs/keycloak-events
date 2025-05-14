@@ -35,9 +35,7 @@ public class UserAddListener extends UserEventListenerProviderFactory {
                                     String alias = userEmail.replaceAll("[^a-zA-Z0-9]", "-");
                                     OrganizationModel model = organizationProvider.create(alias, alias);
                                     if (model != null) {
-
                                         Map<String, List<String>> attr_map = getDefaultOrgAttributes();
-
                                         model.setAttributes(attr_map);
                                         Set<OrganizationDomainModel> set = new java.util.HashSet<>();
                                         set.add(new OrganizationDomainModel(alias, true));
@@ -66,7 +64,22 @@ public class UserAddListener extends UserEventListenerProviderFactory {
 
             @Override
             void onUserRemoved(KeycloakSession session, RealmModel realm, UserModel user) {
-                
+                try {
+                    if (realm.isOrganizationsEnabled()) {
+                        String userEmail = user.getEmail();
+                        OrganizationProvider organizationProvider = org.keycloak.organization.utils.Organizations.getProvider(session);
+                        if (organizationProvider != null) {
+                            log.infof("getting current organization for user %s", userEmail);
+                            String alias = userEmail.replaceAll("[^a-zA-Z0-9]", "-");
+                            OrganizationModel organizationModel = organizationProvider.getByAlias(alias);
+                            if (organizationModel != null) {
+                                organizationProvider.remove(organizationModel);
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Uncaught Sender error", e);
+                }
             }
         };
     }

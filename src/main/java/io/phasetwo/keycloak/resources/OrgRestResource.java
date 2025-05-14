@@ -63,49 +63,6 @@ public class OrgRestResource extends AbstractAdminResource {
         }
     }
 
-    /*
-    @GET
-    @Path("{userId}/organization")
-    @Produces({MediaType.APPLICATION_JSON}) public Response getUserOrg(
-            final @PathParam("userId") String userId
-    ) {
-        checkForAccountAccess();
-        UserModel userModel = session.users().getUserById(realm, userId);
-        if (userModel != null) {
-            OrganizationProvider organizationProvider = org.keycloak.organization.utils.Organizations.getProvider(session);
-            if (organizationProvider != null) {
-                OrganizationModel organizationModel = org.keycloak.organization.utils.Organizations.resolveOrganization(session, userModel);
-                if (organizationModel != null) {
-                    Map<String, List<String>> currentAttributes = organizationModel.getAttributes();
-                    JSONObject org_plan_details = new JSONObject();
-
-                    org_plan_details.put("org_id", organizationModel.getId());
-                    org_plan_details.put("org_email", organizationModel.getName());
-
-                    List<String> subscription_id = currentAttributes.get("subscription_id");
-                    if (subscription_id != null && !subscription_id.isEmpty()) org_plan_details.put("subscription_id", subscription_id.get(0));
-
-                    List<String> subscription_plan_name = currentAttributes.get("subscription_plan_name");
-                    if (subscription_plan_name != null && !subscription_plan_name.isEmpty()) org_plan_details.put("subscription_plan_name", subscription_plan_name.get(0));
-
-                    List<String> subscription_plan_id = currentAttributes.get("subscription_plan_id");
-                    if (subscription_plan_id != null && !subscription_plan_id.isEmpty()) org_plan_details.put("subscription_plan_id", subscription_plan_id.get(0));
-
-                    List<String> subscription_plan_billing_cycle = currentAttributes.get("subscription_plan_billing_cycle");
-                    if (subscription_plan_billing_cycle != null && !subscription_plan_billing_cycle.isEmpty()) org_plan_details.put("subscription_plan_billing_cycle", subscription_plan_billing_cycle.get(0));
-
-                    List<String> subscription_plan_call_limit = currentAttributes.get("subscription_plan_call_limit");
-                    if (subscription_plan_call_limit != null && !subscription_plan_call_limit.isEmpty()) org_plan_details.put("subscription_plan_call_limit", subscription_plan_call_limit.get(0));
-
-                    return Response.ok(org_plan_details).build();
-                }
-            }
-        }
-
-        return Response.status(Response.Status.NOT_FOUND).build();
-    }
-    */
-
     @GET
     @Path("{orgId}/attributes")
     @Produces({MediaType.APPLICATION_JSON})
